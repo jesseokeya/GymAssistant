@@ -2,7 +2,7 @@
   "name": "gym_assistant",
   "private": true,
   "version": "1.0.0",
-  "description": "Nest TypeScript starter repository",
+  "description": "Auto schedule daily workout session at the fit4less gym",
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",
