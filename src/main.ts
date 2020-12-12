@@ -1,11 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from '@dollarsign/nestjs-exceptions';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const appOptions = { cors: true, logger: true };
+  const appOptions = { cors: true, logger: console, bodyParser: true };
   const app = await NestFactory.create(AppModule, appOptions);
-  app.setGlobalPrefix('api');
+  // app.setGlobalPrefix('api/v1');
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   const options = new DocumentBuilder()
     .setTitle('Gym Assistant')
