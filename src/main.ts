@@ -4,9 +4,9 @@ import { GlobalExceptionFilter } from '@dollarsign/nestjs-exceptions';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const appOptions = { cors: true, logger: console, bodyParser: true };
+  const appOptions = { cors: true, logger: true, bodyParser: true };
   const app = await NestFactory.create(AppModule, appOptions);
-  // app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix('api/v1');
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   const options = new DocumentBuilder()
@@ -17,7 +17,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup('/doc', app, document);
+  SwaggerModule.setup('/', app, document);
 
   await app.listen(3000);
 }
