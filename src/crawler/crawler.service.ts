@@ -45,7 +45,7 @@ export class CrawlerService {
 
     await page.evaluate(this.executeScript);
     await page.screenshot({ path: 'screenshot.png' });
-    await browser.close();
+    // await browser.close();
 
     return {
       msg: 'Fit4less session was sucessfully booked',
@@ -54,6 +54,17 @@ export class CrawlerService {
   }
 
   private executeScript() {
-    alert('here!!');
+    const selectClub = () => {
+      const button: any = document.querySelector('#btn_club_select');
+      button.click();
+      setTimeout(() => {
+        const club: any = document.querySelector(
+          '#club_55346EEC-71F1-4A6E-BD17-5D4EA39E144B',
+        );
+        club.click();
+      }, 500);
+    };
+
+    selectClub();
   }
 }
