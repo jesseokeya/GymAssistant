@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class AppService {
+export class HomeService {
   getHello(): string {
-    return 'Hello World!';
+    return 'Welcome To Gym Assistant Server 🚀';
   }
 }
