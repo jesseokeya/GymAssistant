@@ -46,6 +46,11 @@ export class CrawlerService {
         ),
       ]);
 
+      await page.click('.col-md-12 #btn_club_select');
+      await page.click(
+        '.modal-dialog #club_55346EEC-71F1-4A6E-BD17-5D4EA39E144B',
+      );
+
       await navigationPromise;
 
       await page.evaluate(this.executeScript);
@@ -98,7 +103,7 @@ export class CrawlerService {
         '#modal_dates .modal-body .dialog-content .md-option',
       );
       const daysBooked: any = callback();
-      for (let i = 0; i < avaialableDays.length; i++) {
+      for (let i = avaialableDays.length - 1; i >= 0; i++) {
         const avaialableDay: any = avaialableDays[i].innerText
           .toLowerCase()
           .trim();
