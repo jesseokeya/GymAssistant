@@ -16,6 +16,7 @@ export class CrawlerService {
 
   public async start(): Promise<any> {
     try {
+      const selectedTime = '7:00 am';
       const browser = await puppeteer.launch({ headless: false });
       const page = await browser.newPage();
       const navigationPromise = page.waitForNavigation();
@@ -27,6 +28,7 @@ export class CrawlerService {
 
       await page.goto('https://myfit4less.gymmanager.com/portal/login.asp');
       await page.setViewport({ width: 1280, height: 653 });
+      await page.setDefaultNavigationTimeout(90000);
 
       await page.waitForSelector(emailInput);
       await page.type(emailInput, email);
@@ -46,82 +48,133 @@ export class CrawlerService {
         ),
       ]);
 
-      await page.click('.col-md-12 #btn_club_select');
-      await page.click(
-        '.modal-dialog #club_55346EEC-71F1-4A6E-BD17-5D4EA39E144B',
-      );
-
       await navigationPromise;
+      await this.delay(1500);
 
-      await page.evaluate(this.executeScript);
+      await page.waitForSelector('#doorPolicyForm .reserved-slots');
+      await page.evaluate(this.selectClub);
+
+      const bookings = await page.evaluate(this.getBookings);
+      if (bookings.length >= 2) await browser.close();
+
+      await this.delay(1500);
+      const availableDays: any = await page.evaluate(this.availableDays);
+
+      const jobs: Array<any> = [],
+        daysBooked: Array<string> = [];
+
+      for (const available of availableDays) {
+        let shouldBook = false;
+        const { availableDay, reference } = available;
+        if (bookings.length === 0) shouldBook = true;
+        for (const booking of bookings) {
+          const { date } = booking;
+          if (date === availableDay) continue;
+          else shouldBook = true;
+        }
+        if (shouldBook) jobs.push({ availableDay, reference });
+      }
+
+      if (jobs.length === 0) await browser.close();
+
+      let index = 0;
+      for (const job of jobs) {
+        const { availableDay, reference } = job;
+        daysBooked.push(availableDay);
+        await this.bookDays({
+          page,
+          reference,
+          selectedTime,
+          navigationPromise,
+          index,
+        });
+        index++;
+        await navigationPromise;
+      }
+
       await page.screenshot({ path: 'screenshot.png' });
-      // await browser.close();
+      await browser.close();
 
       return {
         msg: 'Fit4less session was sucessfully booked',
         status: 200,
+        daysBooked,
       };
     } catch (e) {
-      console.error(e);
+      console.log(e);
+      throw e;
     }
   }
 
-  private executeScript() {
-    const selectedTime = '7:00 am';
+  private async bookDays({
+    page,
+    reference,
+    selectedTime,
+    navigationPromise,
+    index,
+  }: any) {
+    await navigationPromise;
 
-    const bookings: any = (): Array<any> => {
-      const results = [];
-      const daysBooked = document.querySelectorAll(
-        '#doorPolicyForm .reserved-slots .time-slot .time-slot-box',
-      );
-      for (let i = 0; i < daysBooked.length; i++) {
-        const dayBooked: any = daysBooked[i];
-        const [club, date, time] = dayBooked.children;
+    if (index > 0) {
+      await this.delay(1000);
+      await page.waitForSelector('#btn_date_select');
+      await page.click('#btn_date_select');
+    }
+
+    await navigationPromise;
+
+    console.log(reference);
+    await this.delay(2000);
+    await page.waitForSelector(reference);
+    await page.click(reference);
+
+    console.log({ reference, selectedTime });
+  }
+
+  private getBookings(): Array<any> {
+    const results = [];
+    const daysBooked = document.querySelectorAll(
+      '#doorPolicyForm .reserved-slots .time-slot .time-slot-box',
+    );
+    for (let i = 0; i < daysBooked.length; i++) {
+      const dayBooked: any = daysBooked[i];
+      const [club, date, time] = dayBooked.children;
+      results.push({
+        club: club.innerText.toLowerCase(),
+        date: date.innerText.toLowerCase(),
+        time: time.innerText.toLowerCase(),
+      });
+    }
+    return results;
+  }
+
+  private selectClub() {
+    const button: any = document.querySelector('#btn_club_select');
+    button.click();
+    const club: any = document.querySelector(
+      '#club_55346EEC-71F1-4A6E-BD17-5D4EA39E144B',
+    );
+    club.click();
+  }
+
+  private availableDays(): Array<string> {
+    const results = [];
+    const selectDate: any = document.querySelector('#btn_date_select');
+    selectDate.click();
+    const availableDays: any = document.querySelectorAll(
+      '#modal_dates .modal-body .dialog-content .md-option',
+    );
+    for (let i = 0; i < availableDays.length; i++) {
+      const day = availableDays[i];
+      if (day && day.innerText) {
+        const idx = i + 1;
+        const availableDay: string = day.innerText.toLowerCase().trim();
         results.push({
-          club: club.innerText.toLowerCase(),
-          date: date.innerText.toLowerCase(),
-          time: time.innerText.toLowerCase(),
+          availableDay,
+          reference: `#modal_dates .modal-body .dialog-content .md-option:nth-child(${idx})`,
         });
       }
-      return results;
-    };
-
-    const selectClub = (callback: any) => {
-      const button: any = document.querySelector('#btn_club_select');
-      button.click();
-      const club: any = document.querySelector(
-        '#club_55346EEC-71F1-4A6E-BD17-5D4EA39E144B',
-      );
-      club.click();
-      callback(bookings);
-    };
-
-    const selectTime = (callback) => {
-      const selectDate: any = document.querySelector('#btn_date_select');
-      selectDate.click();
-      const avaialableDays: any = document.querySelectorAll(
-        '#modal_dates .modal-body .dialog-content .md-option',
-      );
-      const daysBooked: any = callback();
-      for (let i = avaialableDays.length - 1; i >= 0; i++) {
-        const avaialableDay: any = avaialableDays[i].innerText
-          .toLowerCase()
-          .trim();
-        for (const dayBooked of daysBooked) {
-          const { date, time } = dayBooked;
-          if (date === avaialableDay && time.includes(selectedTime)) {
-            continue;
-          } else {
-            avaialableDays[i].click();
-            const daysAvailable = document.querySelectorAll(
-              '.available-slots .time-slot-box',
-            );
-            alert(daysAvailable.length);
-          }
-        }
-      }
-    };
-
-    selectClub(selectTime);
+    }
+    return results;
   }
 }
