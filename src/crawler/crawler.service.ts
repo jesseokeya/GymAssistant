@@ -27,7 +27,7 @@ export class CrawlerService {
       const passwordInput = '#API > #block_fields #password';
 
       await page.goto('https://myfit4less.gymmanager.com/portal/login.asp');
-      await page.setViewport({ width: 1366, height: 768 });
+      await page.setViewport({ width: 1280, height: 653 });
       await page.setDefaultNavigationTimeout(90000);
 
       await page.waitForSelector(emailInput);
