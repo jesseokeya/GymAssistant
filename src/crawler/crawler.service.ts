@@ -113,6 +113,7 @@ export class CrawlerService {
     navigationPromise,
     index,
   }: any) {
+    console.log({ reference, selectedTime });
     await navigationPromise;
 
     if (index > 0) {
