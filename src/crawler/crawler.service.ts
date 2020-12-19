@@ -27,7 +27,7 @@ export class CrawlerService {
       const passwordInput = '#API > #block_fields #password';
 
       await page.goto('https://myfit4less.gymmanager.com/portal/login.asp');
-      await page.setViewport({ width: 1280, height: 653 });
+      await page.setViewport({ width: 1366, height: 768 });
       await page.setDefaultNavigationTimeout(90000);
 
       await page.waitForSelector(emailInput);
@@ -85,7 +85,6 @@ export class CrawlerService {
           page,
           reference,
           selectedTime,
-          navigationPromise,
           index,
         });
         index++;
@@ -106,28 +105,24 @@ export class CrawlerService {
     }
   }
 
-  private async bookDays({
-    page,
-    reference,
-    selectedTime,
-    navigationPromise,
-    index,
-  }: any) {
+  private async bookDays({ page, reference, selectedTime, index }: any) {
     console.log({ reference, selectedTime });
-    await navigationPromise;
-
     if (index > 0) {
       await this.delay(1000);
       await page.waitForSelector('#btn_date_select');
       await page.click('#btn_date_select');
     }
 
-    await navigationPromise;
-
     console.log(reference);
     await this.delay(2000);
-    await page.waitForSelector(reference);
-    await page.click(reference);
+    const resp = await page.waitForSelector(reference);
+    if (resp) {
+      await page.evaluate((reference) => {
+        alert(reference);
+        const target: any = document.querySelector(reference);
+        if (target) target.click();
+      }, reference);
+    }
 
     console.log({ reference, selectedTime });
   }
