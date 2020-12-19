@@ -16,7 +16,7 @@ export class CrawlerService {
 
   public async start(): Promise<any> {
     try {
-      const selectedTime = '7:00 am';
+      const selectedTime = 'at 7:00 AM';
       const browser = await puppeteer.launch({ headless: false });
       const page = await browser.newPage();
       const navigationPromise = page.waitForNavigation();
@@ -113,15 +113,33 @@ export class CrawlerService {
       await page.click('#btn_date_select');
     }
 
-    console.log(reference);
     await this.delay(2000);
     const resp = await page.waitForSelector(reference);
+
     if (resp) {
       await page.evaluate((reference) => {
-        alert(reference);
         const target: any = document.querySelector(reference);
         if (target) target.click();
       }, reference);
+
+      await this.delay(1500);
+
+      await page.evaluate((selectedTime) => {
+        const availableSlots: any = document.querySelectorAll(
+          '.available-slots .time-slot .time-slot-box',
+        );
+        for (let i = 0; i < availableSlots.length; i++) {
+          const availableSlot: any = availableSlots[i];
+          const time = availableSlot.children[1];
+          if (time.innerText.trim().includes(selectedTime)) {
+            availableSlot.click();
+          }
+          setTimeout(() => {
+            alert('clickeed');
+          }, 500);
+        }
+        alert(availableSlots.length);
+      }, selectedTime);
     }
 
     console.log({ reference, selectedTime });
